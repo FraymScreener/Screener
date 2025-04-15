@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Скринер сделок Binance</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #121212;
+      color: #f0f0f0;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+    .circle {
+      height: 12px;
+      width: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .green { background-color: #00ff00; }
+    .yellow { background-color: #ffff00; }
+    .red { background-color: #ff0000; }
+    .pair-cell {
+      text-align: left;
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Скринер сделок Binance</h2>
+  <p>Индикаторы активности за 1, 5 и 15 минут</p>
+  <table id="screener">
+    <thead>
+      <tr>
+        <th>Пара</th>
+        <th>1 минута</th>
+        <th>5 минут</th>
+        <th>15 минут</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+    <tr>
+      <td class="pair-cell">LISTAUSDT</td>
+      <td id="LISTAUSDT-1m">—</td>
+      <td id="LISTAUSDT-5m">—</td>
+      <td id="LISTAUSDT-15m">—</td>
+    </tr>
+    
+    <tr>
+      <td class="pair-cell">PROMPTUSDT</td>
+      <td id="PROMPTUSDT-1m">—</td>
+      <td id="PROMPTUSDT-5m">—</td>
+      <td id="PROMPTUSDT-15m">—</td>
+    </tr>
+    
+    <tr>
+      <td class="pair-cell">WCTUSDT</td>
+      <td id="WCTUSDT-1m">—</td>
+      <td id="WCTUSDT-5m">—</td>
+      <td id="WCTUSDT-15m">—</td>
+    </tr>
+    
+    <tr>
+      <td class="pair-cell">OMUSDT</td>
+      <td id="OMUSDT-1m">—</td>
+      <td id="OMUSDT-5m">—</td>
+      <td id="OMUSDT-15m">—</td>
+    </tr>
+    
+    <tr>
+      <td class="pair-cell">FHEUSDT</td>
+      <td id="FHEUSDT-1m">—</td>
+      <td id="FHEUSDT-5m">—</td>
+      <td id="FHEUSDT-15m">—</td>
+    </tr>
+    
+    <tr>
+      <td class="pair-cell">KERNELUSDT</td>
+      <td id="KERNELUSDT-1m">—</td>
+      <td id="KERNELUSDT-5m">—</td>
+      <td id="KERNELUSDT-15m">—</td>
+    </tr>
+    
+    </tbody>
+  </table>
+
+<script>
+const pairs = ["LISTAUSDT", "PROMPTUSDT", "WCTUSDT", "OMUSDT", "FHEUSDT", "KERNELUSDT"];
+
+let tradeHistory = {};
+
+pairs.forEach(function(pair) {
+  tradeHistory[pair] = [];
+  const ws = new WebSocket(`wss://fstream.binance.com/ws/${pair.toLowerCase()}@trade`);
+  ws.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    const now = Date.now();
+    tradeHistory[pair].push(now);
+    tradeHistory[pair] = tradeHistory[pair].filter(t => now - t <= 15 * 60 * 1000);
+    updateTable(pair);
+  };
+});
+
+function updateTable(pair) {
+  const now = Date.now();
+  const count1m = tradeHistory[pair].filter(t => now - t <= 1 * 60 * 1000).length;
+  const count5m = tradeHistory[pair].filter(t => now - t <= 5 * 60 * 1000).length;
+  const count15m = tradeHistory[pair].length;
+
+  const color = count1m >= 1000 ? 'green' : count1m >= 600 ? 'yellow' : 'red';
+  const icon = `<span class="circle ${color}"></span>${count1m}`;
+
+  document.getElementById(`${pair}-1m`).innerHTML = icon;
+  document.getElementById(`${pair}-5m`).innerText = count5m;
+  document.getElementById(`${pair}-15m`).innerText = count15m;
+}
+</script>
+</body>
+</html>
